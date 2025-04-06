@@ -1,58 +1,74 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Mapster;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication2.Data;
+using WebApplication2.DTO.Request;
+using WebApplication2.DTO.Response;
 using WebApplication2.Models;
+using WebApplication2.Services;
 
 namespace WebApplication2.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CategoriesController : ControllerBase
+    public class CategoriesController (ICategoryService categoryService): ControllerBase
     {
-        ApplicationDbContext _context;
-        public CategoriesController(ApplicationDbContext context)
-        {
-            _context = context;
-        }
+     private readonly  ICategoryService categoryService = categoryService;
+
+       
+
+
+
         [HttpGet("")]
         public IActionResult GetAll()
         {
-            var categories = _context.Categories.ToList();
-            return Ok(categories);
+            var categories = categoryService.GetAll();
+            return Ok(categories.Adapt<IEnumerable<CategoryResponse>>()) ;
         }
 
         [HttpGet("{id}")]
+      
         public IActionResult GetById([FromRoute] int id)
         {
-            var category = _context.Categories.Find(id);
-            if(category == null)
+            var category = categoryService.Get(e => e.Id == id);
+          
+            if (category == null)
             
                 return NotFound();
 
-            return Ok(category);
+            return Ok(category.Adapt<CategoryResponse>());
 
 
 
         }
-        [HttpPost ("")]
-        public IActionResult Create([FromBody] Category category)  {
-            _context.Categories.Add(category);
-            _context.SaveChanges();
+
+        [HttpPost("")]
+        public IActionResult Create([FromBody] CategoryRequest category)  {
+            var categoryINAD = categoryService.Add(category.Adapt<Category>());
+
+
             // return Created($"{Request.Scheme}://{Request.Host}/api/Categories/{category.Id}",category);
-            return CreatedAtAction(nameof(GetById), new {category.Id},category);
+            return CreatedAtAction(nameof(GetById), new {categoryINAD.Id},categoryINAD);
         }
-        [HttpDelete("{id}")]
+
+
+        [HttpPut("{id}")]
+        public IActionResult Update([FromBody] int id, [FromBody] CategoryRequest category)
+        {
+            var categoryINDP = categoryService.Edit(id, category.Adapt<Category>());
+            if (!categoryINDP)
+                return NotFound();
+            return NoContent();
+
+        }
+
+
+            [HttpDelete("{id}")]
         public IActionResult Delete([FromRoute]int id)
         {
-            var category = _context.Categories.Find(id);
-            if(category == null)
-            {
+            var categoryINDP = categoryService.remove(id);
+            if (!categoryINDP)
                 return NotFound();
-            }
-
-            _context.Categories.Remove(category);
-
-            _context.SaveChanges();
             return NoContent();
 
         }

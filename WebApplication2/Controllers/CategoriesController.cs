@@ -1,4 +1,5 @@
 ﻿using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication2.Data;
@@ -11,6 +12,7 @@ namespace WebApplication2.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CategoriesController (ICategoryService categoryService): ControllerBase
     {
      private readonly  ICategoryService categoryService = categoryService;

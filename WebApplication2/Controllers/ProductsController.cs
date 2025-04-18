@@ -53,6 +53,7 @@ namespace WebApplication2.Controllers
 
 
 
+
         [HttpPost("")]
         public IActionResult Create([FromForm] ProductRequest productRequest)
         {
@@ -86,8 +87,65 @@ namespace WebApplication2.Controllers
             // إذا تم الحذف بنجاح، إرجاع NoContent
             return NoContent();
         }
+        [HttpPut("{id}")]
+        public IActionResult Update([FromRoute] int id, [FromForm] ProductUpdateRequest productRequest)
+        {
+
+            var productInDb =_context.Products.AsNoTracking().FirstOrDefault(product=> product.Id == id);
+
+            var product =productRequest.Adapt<Product>();
+
+            var file= productRequest.mainImg;
+
+            if (productInDb != null)
+            {
+
+                if (file != null && file.Length > 0)
+                {
+
+                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "images", fileName);
+                    using (var strean = System.IO.File.Create(filePath))
+                    {
+
+                        file.CopyTo(strean);
+                    }
+
+                    //delete old image from folder
+
+                    var oldPath = Path.Combine(Directory.GetCurrentDirectory(), "images", productInDb.mainImg);
+
+                    if (System.IO.File.Exists(oldPath))
+                    {
+
+                        System.IO.File.Delete(oldPath);
+                    }
+                    product.mainImg = fileName;
+                }
+
+                else
+                {
+
+                    product.mainImg = productInDb.mainImg;
+                }
+
+                product.Id = id;
+
+                _context.Products.Update(product);
+
+                _context.SaveChanges();
+
+                return NoContent();
+            }
 
 
 
-    }
+
+
+
+            }
+
+
+
+        }
 }

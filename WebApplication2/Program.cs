@@ -1,7 +1,10 @@
 
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using WebApplication2.Data;
+using WebApplication2.Models;
+using WebApplication2.Services;
 using WebApplication2.Servises;
 
 namespace WebApplication2
@@ -20,6 +23,16 @@ namespace WebApplication2
             builder.Services.AddTransient<Ios,WindowsServics>();
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("defaultConnection")));
+
+            builder.Services.AddScoped<ICategoryService, CategoryService>();
+
+            builder.Services.AddIdentity<ApplicationUsr, IdentityRole>(options =>
+            {
+                options.User.RequireUniqueEmail = false;
+            })
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

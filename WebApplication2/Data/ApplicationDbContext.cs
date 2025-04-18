@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.DataProtection.Internal;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApplication2.Models;
 
 namespace WebApplication2.Data
 {
-    public class ApplicationDbContext :  DbContext
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUsr>
     {
         
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)

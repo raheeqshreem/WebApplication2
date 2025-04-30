@@ -1,4 +1,6 @@
-﻿namespace WebApplication2.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace WebApplication2.Models
 {
     public class Product
     {
@@ -12,10 +14,13 @@
         public double Rate { get; set; }
         public bool status { get; set; }
         public Category category { get; set; }
+        [ForeignKey(nameof(Category))]
         public int CategoryId { get; set; }
 
-        public Product product { get; set; }
-        public int ProductId { get; set; }
+        [ForeignKey(nameof(Brand))]
+        public int BrandId { get; set; }
+        public Brand Brand { get; set; }
+
 
 
     }

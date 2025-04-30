@@ -1,59 +1,51 @@
 ﻿using System.Linq.Expressions;
+using System.Threading.Tasks;
 using WebApplication2.Data;
 using WebApplication2.Models;
+using WebApplication2.Services.IServices;
 
 namespace WebApplication2.Services
 {
-    public class CategoryService : ICategoryService
+    public class CategoryService : Service<Category>,ICategoryService
     {
 
 
         ApplicationDbContext _context;
-        public CategoryService(ApplicationDbContext context)
+        public CategoryService(ApplicationDbContext context) : base(context)
         {
-            _context = context;
+           this. _context = context;
         }
 
 
 
-        public Category Add(Category category)
-        {
-            _context.Categories.Add(category);
-            _context.SaveChanges();
-            return category;
-
-        }
+      
 
 
-        public bool Edit(int id, Category category)
+        public async Task<bool> EditAsync(int id, Category category,CancellationToken cancellationToken=default)
         {
             Category? categoryInDP = _context.Categories.Find(id);
             if (categoryInDP == null)
                 return false;
-            _context.Categories.Update(category);
-            _context.SaveChanges();
+            categoryInDP .Name = category.Name;
+            categoryInDP .Description = category.Description;
+           await _context.SaveChangesAsync(cancellationToken);
             return true;
             
         }
 
-        public Category? Get(Expression<Func<Category, bool>> expression)
-        {
-            return _context.Categories.FirstOrDefault(expression);
-        }
 
-        public IEnumerable<Category> GetAll()
-        {
-            return _context.Categories.ToList();
-        }
 
-        public bool remove(int id)
+
+        public async Task<bool> UpdateToggleAsync(int id, CancellationToken cancellationToken)
         {
             Category? categoryInDP = _context.Categories.Find(id);
             if (categoryInDP == null)
                 return false;
-            _context.Categories.Remove(categoryInDP);
-            _context.SaveChanges();
+            categoryInDP.status = !categoryInDP.status;
+            await _context.SaveChangesAsync(cancellationToken);
             return true;
+
         }
+
     }
 }

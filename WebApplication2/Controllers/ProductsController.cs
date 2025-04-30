@@ -12,140 +12,83 @@ namespace WebApplication2.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductsController(IProductServise productService) : ControllerBase
+    public class ProductsController : ControllerBase
     {
-        private readonly IProductServise productService= productService;
+        private readonly IProductServise productService;
 
-        [HttpGet("")]
-        public IActionResult GetAll()
+        public ProductsController (IProductServise productService)
         {
-            var products = productService.GetAll();
-
-            if (products == null || !products.Any())
-            {
-                return NotFound(); // إذا لم تكن هناك منتجات
-            }
-
-            return Ok(products); // إرجاع قائمة المنتجات المحولة
+            this.productService = productService;
         }
 
-
-
-
-
-
-       [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id)
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            // استدعاء الـ GetById من الـ ProductService
-            var product = productService.Get(id);
+            var product = await productService.GetOne(e => e.Id == id, null, true);
 
             if (product == null)
-            {
-                return NotFound(); // إرجاع 404 إذا لم يوجد المنتج
-            }
 
-            return Ok(product); // إرجاع المنتج المحول إلى ProductResponse
+                return NotFound();
+
+            return Ok(product.Adapt<ProductResponse>());
         }
 
-
-
-
-
-
-
-        [HttpPost("")]
-        public IActionResult Create([FromForm] ProductRequest productRequest)
+        [HttpGet("GetByName/{Name}")]
+        public async Task<IActionResult> GetByName([FromRoute] string Name)
         {
-            // استدعاء دالة Create من الـ ProductService
-            var result = productService.Add(productRequest);
+            var category = await productService.GetOne(e => e.Name.Equals(Name));
 
-            // إذا لم يتم إنشاء المنتج بنجاح، إرجاع BadRequest
-            if (result == null)
+            if (category == null)
+
+                return NotFound();
+
+            return Ok(category.Adapt<ProductResponse>());
+        }
+        [HttpGet("")]
+        public async Task<IActionResult> GetCategories()
+        {
+            var result = await productService.GetAsync();
+            if (result != null)
             {
-                return BadRequest();
+                return Ok(result.Adapt<IEnumerable<ProductResponse>>());
             }
-
-            // إرجاع المنتج المضاف مع الـ HTTP status Created
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            return NotFound(result);
         }
 
-
-
-        [HttpDelete("{id}")]
-        public IActionResult Delete([FromRoute] int id)
+        [HttpPost]
+        public async Task<IActionResult> Add([FromForm] ProductRequest dto, CancellationToken cancellationToken)
         {
-            // استدعاء دالة Delete من الـ ProductService
-            var result = productService.remove(id);
-
-            // إذا كانت نتيجة الحذف false، إرجاع NotFound
+            var result = await productService.AddAsync(dto, cancellationToken);
             if (!result)
             {
-                return NotFound(); // المنتج غير موجود
+                return BadRequest("فشل في إضافة المنتج");
             }
-
-            // إذا تم الحذف بنجاح، إرجاع NoContent
-            return NoContent();
+            return Ok("تمت إضافة المنتج بنجاح");
         }
+
+        // PUT: api/Product/5
         [HttpPut("{id}")]
-        public IActionResult Update([FromRoute] int id, [FromForm] ProductUpdateRequest productRequest)
+        public async Task<IActionResult> Edit(int id, [FromForm] ProductRequest dto, CancellationToken cancellationToken)
         {
-
-            var productInDb =_context.Products.AsNoTracking().FirstOrDefault(product=> product.Id == id);
-
-            var product =productRequest.Adapt<Product>();
-
-            var file= productRequest.mainImg;
-
-            if (productInDb != null)
+            var result = await productService.Edit(id, dto, cancellationToken);
+            if (!result)
             {
-
-                if (file != null && file.Length > 0)
-                {
-
-                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "images", fileName);
-                    using (var strean = System.IO.File.Create(filePath))
-                    {
-
-                        file.CopyTo(strean);
-                    }
-
-                    //delete old image from folder
-
-                    var oldPath = Path.Combine(Directory.GetCurrentDirectory(), "images", productInDb.mainImg);
-
-                    if (System.IO.File.Exists(oldPath))
-                    {
-
-                        System.IO.File.Delete(oldPath);
-                    }
-                    product.mainImg = fileName;
-                }
-
-                else
-                {
-
-                    product.mainImg = productInDb.mainImg;
-                }
-
-                product.Id = id;
-
-                _context.Products.Update(product);
-
-                _context.SaveChanges();
-
-                return NoContent();
+                return NotFound("المنتج غير موجود أو حدث خطأ أثناء التعديل");
             }
-
-
-
-
-
-
-            }
-
-
-
+            return Ok("تم تعديل المنتج بنجاح");
         }
+
+        // DELETE: api/Product/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+        {
+            var result = await productService.remove(id, cancellationToken);
+            if (!result)
+            {
+                return NotFound("المنتج غير موجود");
+            }
+            return Ok("تم حذف المنتج بنجاح");
+        }
+
+    }
 }

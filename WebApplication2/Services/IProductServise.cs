@@ -2,20 +2,16 @@
 using WebApplication2.DTO.Request;
 using WebApplication2.DTO.Response;
 using WebApplication2.Models;
+using WebApplication2.Services.IServices;
 
 namespace WebApplication2.Services
 {
-    public interface IProductServise
+    public interface IProductServise :IService<Product>
     {
 
-        IEnumerable<ProductResponse> GetAll();
-
-        ProductResponse? Get(int id);
-        ProductResponse Add(ProductRequest productRequest);
-      
-        bool remove(int id);
-
-
+        Task<bool> AddAsync(ProductRequest request, CancellationToken cancellationToken = default);
+        Task<bool> remove(int id, CancellationToken cancellationToken = default);
+        Task<bool> Edit(int id, ProductRequest category, CancellationToken cancellationToken = default);
 
     }
 }

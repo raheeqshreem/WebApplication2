@@ -10,66 +10,73 @@ namespace WebApplication2.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    
     public class BrandsController (IBrandService brandService): ControllerBase
     {
         private readonly IBrandService brandService = brandService;
 
 
-
         [HttpGet("")]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAllAsync()
         {
-            var brands= brandService.GetAll();
-            return Ok(brands.Adapt<IEnumerable<BrandResponse>>());
+            var brands = await brandService.GetAsync();
+            return Ok(brands.Adapt<IEnumerable<CategoryResponse>>());
         }
+
 
         [HttpGet("{id}")]
 
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetByIdAsync([FromRoute] int id)
         {
-            var brand = brandService.Get(e => e.Id == id);
+            var brand = await brandService.GetOne(e => e.Id == id);
 
             if (brand == null)
 
                 return NotFound();
 
             return Ok(brand.Adapt<BrandResponse>());
-
-
-
         }
 
+
+
+
         [HttpPost("")]
-        public IActionResult Create([FromBody] BrandRequest brand)
+        public async Task<IActionResult> CreateAsync([FromBody] BrandRequest brand, CancellationToken cancellationToken)
         {
-            var brandINAD = brandService.Add(brand.Adapt<Brand>());
+            var brandINAD = await brandService.AddAsync(brand.Adapt<Brand>(), cancellationToken);
 
 
             // return Created($"{Request.Scheme}://{Request.Host}/api/Categories/{category.Id}",category);
-            return CreatedAtAction(nameof(GetById), new { brandINAD.Id }, brandINAD);
+            return CreatedAtAction(nameof(GetByIdAsync), new { brandINAD.Id }, brandINAD);
         }
+
 
 
         [HttpPut("{id}")]
-        public IActionResult Update([FromBody] int id, [FromBody]BrandRequest brand)
+        public async Task<IActionResult> UpdateAsync([FromBody] int id, [FromBody] BrandRequest brand)
         {
-            var brandINDP = brandService.Edit(id, brand.Adapt<Brand>());
+            var brandINDP = await brandService.EditAsync(id, brand.Adapt<Brand>());
             if (!brandINDP)
                 return NotFound();
             return NoContent();
 
         }
+
 
 
         [HttpDelete("{id}")]
-        public IActionResult Delete([FromRoute] int id)
+        public async Task<IActionResult> DeleteAsync([FromRoute] int id)
         {
-            var brandINDP = brandService.remove(id);
+            var brandINDP = await brandService.removeAsync(id);
             if (!brandINDP)
                 return NotFound();
             return NoContent();
 
         }
+
+
+
+
 
 
 

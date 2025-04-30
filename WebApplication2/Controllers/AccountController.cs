@@ -3,9 +3,16 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using WebApplication2.DTO.Request;
 using WebApplication2.Models;
+using WebApplication2.Utility;
 
 namespace WebApplication2.Controllers
 {
@@ -15,10 +22,12 @@ namespace WebApplication2.Controllers
     {
         private readonly UserManager<ApplicationUsr> userManager;
         private readonly SignInManager<ApplicationUsr> signInManager;
-       public AccountController(UserManager<ApplicationUsr> userManager,SignInManager<ApplicationUsr>signInManager) 
+        private readonly IEmailSender emailSender;
+       public AccountController(UserManager<ApplicationUsr> userManager,SignInManager<ApplicationUsr>signInManager,IEmailSender emailSender) 
         {
             this.userManager = userManager;
             this.signInManager = signInManager;
+            this.emailSender = emailSender;
         }
 
         [HttpPost("register")]
@@ -29,6 +38,12 @@ namespace WebApplication2.Controllers
            var result= await userManager.CreateAsync(applicationUser, registerRequest.Password);
             if (result.Succeeded)
             {
+
+                await emailSender.SendEmailAsync(applicationUser.Email, "Welcome",
+                    $"<h1> Hello..{ applicationUser.UserName} </h1 > <p> WebApplication2, new account <p/> ");
+
+                await userManager.AddToRoleAsync(applicationUser, StaticData.Customer);
+
                 await signInManager.SignInAsync(applicationUser, false);
 
                 return NoContent();
@@ -44,10 +59,37 @@ namespace WebApplication2.Controllers
             if (applicationUser !=null)
             {
                 var result =  await userManager.CheckPasswordAsync(applicationUser, loginRequest.Password);
+
+                List <Claim> claims = new();
+
+                claims.Add(new(ClaimTypes.Name, applicationUser .UserName));
+
+                var userRoles =await userManager.GetRolesAsync(applicationUser);
+                if (userRoles.Count > 0)
+                {
+
+                    foreach (var item in userRoles)
+                    {
+                        claims.Add(new(ClaimTypes.Role, item));
+                    }
+                }
                 if (result)
                 {
-                    await signInManager.SignInAsync(applicationUser,loginRequest.RememberMe);
-                    return NoContent();
+
+                    SymmetricSecurityKey symmetricSecurityKey = new SymmetricSecurityKey (Encoding.UTF8.GetBytes("b2PoI959Z00AcgyDmBU7K8lxI1LWIDV6")); 
+                    SigningCredentials signingCredentials =new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
+
+                    var jwtToken = new JwtSecurityToken(
+
+                    claims: claims,
+
+                    expires: DateTime.Now.AddMinutes(30), 
+                    signingCredentials: signingCredentials
+                    );
+
+                    string token = new JwtSecurityTokenHandler().WriteToken(jwtToken);
+
+                    return Ok(new { token });
                 }
 
 
@@ -66,8 +108,9 @@ namespace WebApplication2.Controllers
 
         [Authorize]
 
+
         [HttpPost("ChangePassword")]
-        public  async Task< IActionResult >ChangePassword(ChangePasswordRequest changePasswordRequest)
+        public  async Task<IActionResult> ChangePassword(ChangePasswordRequest changePasswordRequest)
         {
 
             var applicationUser = await userManager.GetUserAsync(User);
@@ -86,6 +129,7 @@ namespace WebApplication2.Controllers
 
 
             }
+            return BadRequest();
 
         }
 

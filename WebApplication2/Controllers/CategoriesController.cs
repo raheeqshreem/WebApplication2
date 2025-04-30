@@ -7,12 +7,13 @@ using WebApplication2.DTO.Request;
 using WebApplication2.DTO.Response;
 using WebApplication2.Models;
 using WebApplication2.Services;
+using WebApplication2.Utility;
 
 namespace WebApplication2.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles =$"{StaticData.SuperAdmin}")]
     public class CategoriesController (ICategoryService categoryService): ControllerBase
     {
      private readonly  ICategoryService categoryService = categoryService;
@@ -22,17 +23,17 @@ namespace WebApplication2.Controllers
 
 
         [HttpGet("")]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAllAsync()
         {
-            var categories = categoryService.GetAll();
+            var categories = await categoryService.GetAsync();
             return Ok(categories.Adapt<IEnumerable<CategoryResponse>>()) ;
         }
 
         [HttpGet("{id}")]
       
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetByIdAsync([FromRoute] int id)
         {
-            var category = categoryService.Get(e => e.Id == id);
+            var category = await categoryService.GetOne(e => e.Id == id);
           
             if (category == null)
             
@@ -45,19 +46,19 @@ namespace WebApplication2.Controllers
         }
 
         [HttpPost("")]
-        public IActionResult Create([FromBody] CategoryRequest category)  {
-            var categoryINAD = categoryService.Add(category.Adapt<Category>());
+        public async Task<IActionResult> CreateAsync([FromBody] CategoryRequest category,CancellationToken cancellationToken)  {
+            var categoryINAD = await categoryService.AddAsync(category.Adapt<Category>(),cancellationToken);
 
 
             // return Created($"{Request.Scheme}://{Request.Host}/api/Categories/{category.Id}",category);
-            return CreatedAtAction(nameof(GetById), new {categoryINAD.Id},categoryINAD);
+            return CreatedAtAction(nameof(GetByIdAsync), new {categoryINAD.Id},categoryINAD);
         }
 
 
         [HttpPut("{id}")]
-        public IActionResult Update([FromBody] int id, [FromBody] CategoryRequest category)
+        public async Task<IActionResult> UpdateAsync([FromBody] int id, [FromBody] CategoryRequest category)
         {
-            var categoryINDP = categoryService.Edit(id, category.Adapt<Category>());
+            var categoryINDP =  await categoryService.EditAsync(id, category.Adapt<Category>());
             if (!categoryINDP)
                 return NotFound();
             return NoContent();
@@ -66,9 +67,9 @@ namespace WebApplication2.Controllers
 
 
             [HttpDelete("{id}")]
-        public IActionResult Delete([FromRoute]int id)
+        public async Task<IActionResult> DeleteAsync([FromRoute]int id)
         {
-            var categoryINDP = categoryService.remove(id);
+            var categoryINDP =  await categoryService.removeAsync(id);
             if (!categoryINDP)
                 return NotFound();
             return NoContent();

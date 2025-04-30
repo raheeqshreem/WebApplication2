@@ -1,62 +1,50 @@
 ﻿using System.Linq.Expressions;
 using WebApplication2.Data;
 using WebApplication2.Models;
+using WebApplication2.Services.IServices;
 
 namespace WebApplication2.Services
 {
-    public class BrandService : IBrandService
+    public class BrandService : Service<Brand>,IBrandService
     {
 
 
         ApplicationDbContext _context;
-        public BrandService(ApplicationDbContext context)
+        public BrandService(ApplicationDbContext context) : base(context)
         {
-            _context = context;
+            this._context = context;
         }
 
 
 
-        public Brand Add(Brand brand)
+
+
+
+        public async Task<bool> EditAsync(int id, Brand brand, CancellationToken cancellationToken = default)
         {
-            _context.Brands.Add(brand);
-            _context.SaveChanges();
-            return brand;
-
-        }
-
-
-        public bool Edit(int id, Brand brand)
-        {
-            Brand? BrandInDb = _context.Brands.Find(id);
-            if (BrandInDb == null)
+            Brand? brandInDP = _context.Brands.Find(id);
+            if (brandInDP == null)
                 return false;
-            _context.Brands.Update(brand);
-            _context.SaveChanges();
+            brandInDP.Name = brand.Name;
+            brandInDP.Description = brand.Description;
+            await _context.SaveChangesAsync(cancellationToken);
             return true;
 
         }
 
-        public Brand? Get(Expression<Func<Brand, bool>> expression)
-        {
-            return _context.Brands.FirstOrDefault(expression);
-        }
 
-        public IEnumerable<Brand> GetAll()
-        {
-            return _context.Brands.ToList();
-        }
 
-        public bool remove(int id)
+
+        public async Task<bool> UpdateToggleAsync(int id, CancellationToken cancellationToken)
         {
-            Brand? BrandInDP = _context.Brands.Find(id);
-            if (BrandInDP == null)
+            Brand? brandInDP = _context.Brands.Find(id);
+            if (brandInDP == null)
                 return false;
-            _context.Brands.Remove(BrandInDP);
-            _context.SaveChanges();
+            brandInDP.status = !brandInDP.status;
+            await _context.SaveChangesAsync(cancellationToken);
             return true;
+
         }
-    }
-}
 
 
 

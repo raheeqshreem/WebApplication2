@@ -7,130 +7,99 @@ using WebApplication2.Models;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using Mapster;
 using Microsoft.AspNetCore.Hosting;
+using WebApplication2.Services.IServices;
+using Microsoft.EntityFrameworkCore;
 namespace WebApplication2.Services
 {
-    public class ProductService : IProductServise
+    public class ProductService : Service<Product>,IProductServise
     {
+        private readonly ApplicationDbContext dbContext;
 
-        ApplicationDbContext _context;
-        public ProductService(ApplicationDbContext context)
+        public ProductService(ApplicationDbContext dbContext) : base(dbContext)
         {
-            _context = context;
+            this.dbContext = dbContext;
         }
 
-
-      
-        public ProductResponse?Add(ProductRequest productRequest)
+        public async Task<bool> AddAsync(ProductRequest request, CancellationToken cancellationToken = default)
         {
+            var file = request.mainImg;
+            var product = request.Adapt<Product>();
+            if (file != null && file.Length > 0)
+            {
+                // /tetrirette.png  
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "images", fileName);
+                using (var stream = System.IO.File.Create(filePath))
+                {
+                    file.CopyTo(stream);
+                }
+
+                product.mainImg = fileName;
+                dbContext.Products.Add(product);
+                dbContext.SaveChanges();
+                return true;
+            }
+            return false;
+        }
+
+        public async Task<bool> Edit(int id, ProductRequest productRequest, CancellationToken cancellationToken = default)
+        {
+            var productInDb = dbContext.Products.FirstOrDefault(product => product.Id == id);
+
+            if (productInDb == null)
+            {
+                return false;
+            }
+
             var file = productRequest.mainImg;
-            var product = productRequest.Adapt<Product>();
 
             if (file != null && file.Length > 0)
             {
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
                 var filePath = Path.Combine(Directory.GetCurrentDirectory(), "images", fileName);
 
-                // Save file to server
                 using (var stream = System.IO.File.Create(filePath))
                 {
                     file.CopyTo(stream);
                 }
 
-                // Assign the file name to the product object
-                product.mainImg = fileName;
+                // Delete old image from folder
+                var oldPath = Path.Combine(Directory.GetCurrentDirectory(), "images", productInDb.mainImg);
+                if (System.IO.File.Exists(oldPath))
+                {
+                    System.IO.File.Delete(oldPath);
+                }
 
-                _context.Products.Add(product);
-                _context.SaveChanges();
-
-                return product.Adapt<ProductResponse>(); // Return a response if necessary
+                productInDb.mainImg = fileName;
             }
 
-            return null; // Or handle the error accordingly
-        }
+            // Update the other properties from the DTO
+            productRequest.Adapt(productInDb); // Update properties from DTO to the tracked entity
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        public ProductResponse? Get(int id)
-        {
-            var product = _context.Products.Find(id);
-
-            // إذا لم يوجد المنتج، إرجاع null أو يمكن إرجاع رسالة أخرى مثل NotFound
-            if (product == null)
-            {
-                return null;
-            }
-
-            // تحويل المنتج إلى ProductResponse
-            return product.Adapt<ProductResponse>();
-        }
-
-
-
-
-        public IEnumerable<ProductResponse>GetAll()
-        {
-            // جلب جميع المنتجات من قاعدة البيانات
-            var products = _context.Products.ToList();
-
-            // إذا كانت المنتجات فارغة، يمكن إرجاع null أو قائمة فارغة
-            if (products == null || !products.Any())
-            {
-                return null;
-            }
-
-            // تحويل المنتجات إلى ProductResponse
-            return products.Adapt<IEnumerable<ProductResponse>>();
-        }
-}
-
-
-
-
-
-
-
-
-
-
-       public bool remove(int id)
-        {
-            var product = _context.Products.Find(id);
-
-            // إذا لم يتم العثور على المنتج، إرجاع false
-            if (product == null)
-            {
-                return false;
-            }
-
-            // تحديد مسار الصورة وحذفها إذا كانت موجودة
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "images", product.mainImg);
-            if (System.IO.File.Exists(filePath))
-            {
-                System.IO.File.Delete(filePath);
-            }
-
-            // إزالة المنتج من قاعدة البيانات
-            _context.Products.Remove(product);
-            _context.SaveChanges();
+            dbContext.SaveChanges();
 
             return true;
         }
+
+
+
+
+        public async Task<bool> remove(int id, CancellationToken cancellationToken = default)
+        {
+            var product = await dbContext.Products.FindAsync(new object[] { id }, cancellationToken);
+
+            if (product == null)
+            {
+                return false; // المنتج غير موجود
+            }
+
+            dbContext.Products.Remove(product);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+
+
+
 
 
 

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebApplication2.Data;
 
@@ -11,9 +12,11 @@ using WebApplication2.Data;
 namespace WebApplication2.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250421150619_initial")]
+    partial class initial
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -267,27 +270,6 @@ namespace WebApplication2.Migrations
                     b.ToTable("Brands");
                 });
 
-            modelBuilder.Entity("WebApplication2.Models.Cart", b =>
-                {
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ApplicationUserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("applicationUsrId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("count")
-                        .HasColumnType("int");
-
-                    b.HasKey("ProductId", "ApplicationUserId");
-
-                    b.HasIndex("applicationUsrId");
-
-                    b.ToTable("Carts");
-                });
-
             modelBuilder.Entity("WebApplication2.Models.Category", b =>
                 {
                     b.Property<int>("Id")
@@ -411,23 +393,6 @@ namespace WebApplication2.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("WebApplication2.Models.Cart", b =>
-                {
-                    b.HasOne("WebApplication2.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("WebApplication2.Models.ApplicationUsr", "applicationUsr")
-                        .WithMany()
-                        .HasForeignKey("applicationUsrId");
-
-                    b.Navigation("Product");
-
-                    b.Navigation("applicationUsr");
                 });
 
             modelBuilder.Entity("WebApplication2.Models.Product", b =>

@@ -1,16 +1,13 @@
 ﻿using System.Linq.Expressions;
 using WebApplication2.Models;
+using WebApplication2.Services.IServices;
 
 namespace WebApplication2.Services
 {
-    public interface IBrandService
+    public interface IBrandService : IService<Brand>
     {
-        IEnumerable<Brand> GetAll();
-
-        Brand? Get(Expression<Func<Brand, bool>> expression);
-        Brand Add(Brand brand);
-        bool Edit(int id, Brand brand);
-        bool remove(int id);
+        Task<bool> EditAsync(int id, Brand brand, CancellationToken cancellationToken = default);
+        Task<bool> UpdateToggleAsync(int id, CancellationToken cancellationToken);
 
     }
 }

@@ -1,16 +1,13 @@
 ﻿using System.Linq.Expressions;
 using WebApplication2.Models;
+using WebApplication2.Services.IServices;
 
 namespace WebApplication2.Services
 {
-    public interface ICategoryService
+    public interface ICategoryService:IService<Category>
     {
-        IEnumerable<Category> GetAll();
-
-        Category? Get(Expression<Func<Category, bool>> expression);
-        Category Add(Category category);
-        bool Edit(int id,Category category);
-        bool remove(int id);
-
+      
+       Task<bool> EditAsync(int id, Category category, CancellationToken cancellationToken = default);
+        Task<bool> UpdateToggleAsync(int id, CancellationToken cancellationToken);
     }
 }

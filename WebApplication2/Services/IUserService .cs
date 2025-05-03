@@ -8,6 +8,7 @@ namespace WebApplication2.Services
     public interface IUserService:IService<ApplicationUsr>
     {
         Task<bool> ChangeRole(string userId, string roleName);
+        Task<bool?> LockUnLocK(String userId);
 
     }
 }

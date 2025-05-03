@@ -57,6 +57,55 @@ namespace WebApplication2.Services
         }
 
 
+        public async Task<bool?> LockUnLock(string userId)
+
+        {
+
+            var user = await userManager.FindByIdAsync(userId);
+
+            if (user is null)
+                return null;
+
+
+            var isLockedNow = user.LockoutEnabled && user.LockoutEnd > DateTime.Now;
+
+            if (isLockedNow)
+
+            {
+
+                // Removes the block
+
+                user.LockoutEnabled = false;
+
+                user.LockoutEnd = null;
 
             }
-}
+
+            else
+
+            {
+
+                // Apply the block
+
+                user.LockoutEnabled = true;
+
+                user.LockoutEnd = DateTime.Now.AddMinutes(1);
+
+            }
+
+            await userManager.UpdateAsync(user);
+
+            return !isLockedNow;
+
+
+
+
+
+
+
+        }
+
+
+
+            }
+    }

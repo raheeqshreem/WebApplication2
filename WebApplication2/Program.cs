@@ -62,6 +62,7 @@ namespace WebApplication2
             builder.Services.AddIdentity <ApplicationUsr, IdentityRole>(options =>
             {
                 options.User.RequireUniqueEmail = false;
+                options.SignIn.RequireConfirmedEmail = true;
             })
 
             .AddEntityFrameworkStores <ApplicationDbContext > ()

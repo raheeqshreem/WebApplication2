@@ -58,7 +58,25 @@ public UsersController  (IUserService userService)
 
             return Ok(result);
         }
+        [HttpPatch("LockUnLock/{userId}")]
 
+        public async Task<IActionResult?> LockUnLock(string userId)
+        {
+            var result = await userService.LockUnLocK(userId);
+
+            if (result == true)
+            {
+
+                return Ok();
+
+            }
+            else
+
+            {
+
+                return BadRequest();
+            }
+        }
 
 
 

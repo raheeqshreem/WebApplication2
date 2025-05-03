@@ -45,7 +45,7 @@ namespace WebApplication2.Utility.DBInitlizer
                 Console.WriteLine(ex.Message);
             }
 
-            if (roleManager.Roles.IsNullOrEmpty())
+            if (!roleManager.Roles.Any())
 
             {
 

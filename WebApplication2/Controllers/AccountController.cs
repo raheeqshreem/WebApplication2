@@ -8,8 +8,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Sockets;
+using System.Numerics;
 using System.Security.Claims;
 using System.Text;
+using System.Threading;
 using WebApplication2.DTO.Request;
 using WebApplication2.Models;
 using WebApplication2.Utility;
@@ -38,18 +41,59 @@ namespace WebApplication2.Controllers
            var result= await userManager.CreateAsync(applicationUser, registerRequest.Password);
             if (result.Succeeded)
             {
-
-                await emailSender.SendEmailAsync(applicationUser.Email, "Welcome",
-                    $"<h1> Hello..{ applicationUser.UserName} </h1 > <p> WebApplication2, new account <p/> ");
-
                 await userManager.AddToRoleAsync(applicationUser, StaticData.Customer);
 
-                await signInManager.SignInAsync(applicationUser, false);
+                // await emailSender.SendEmailAsync(applicationUser.Email, "Welcome",
+                //  $"<h1> Hello..{ applicationUser.UserName} </h1 > <p> WebApplication2, new account <p/> ");
+                var token = await userManager.GenerateEmailConfirmationTokenAsync(applicationUser);
+
+                var emailConfirmUrl = Url.Action(nameof(ConfirmEmail), "Account", new { token, userId = applicationUser.Id },
+
+
+                  protocol: Request.Scheme,//http or https host:Request.Host.Value
+                  host: Request.Host.Value
+
+                  );
+
+                await emailSender.SendEmailAsync(applicationUser.Email, "Confirm Email", 
+                    $"<h1> Hello.. {applicationUser. UserName} </h1> <p> t-tshop, new account <p/> * " +
+                    $" < a href = '{emailConfirmUrl}' > click here </ a > ");
+
 
                 return NoContent();
             }
             return BadRequest(result.Errors);
         }
+
+        [HttpGet("ConfirmEmail")]
+        public async Task<IActionResult> ConfirmEmail(String token, string userId)
+        {
+            var user = await userManager.FindByIdAsync(userId);
+
+            if (user is not null)
+
+            {
+
+                var result = await userManager.ConfirmEmailAsync(user, token);
+
+                if (result.Succeeded)
+
+                {
+
+                    return Ok(new { message = "email confirmed" });
+
+                } else
+
+                {
+
+                    return BadRequest(result.Errors);
+                }
+            }
+            return NotFound();
+        }
+
+
+
 
 
         [HttpPost("login")]
@@ -58,7 +102,7 @@ namespace WebApplication2.Controllers
           var applicationUser=  await userManager.FindByEmailAsync(loginRequest.Email);
             if (applicationUser !=null)
             {
-                var result =  await userManager.CheckPasswordAsync(applicationUser, loginRequest.Password);
+                var result = await signInManager.PasswordSignInAsync(applicationUser, loginRequest.Password, loginRequest.RememberMe, false);
 
                 List <Claim> claims = new();
 
@@ -73,17 +117,17 @@ namespace WebApplication2.Controllers
                         claims.Add(new(ClaimTypes.Role, item));
                     }
                 }
-                if (result)
+                if (result.Succeeded)
                 {
 
-                    SymmetricSecurityKey symmetricSecurityKey = new SymmetricSecurityKey (Encoding.UTF8.GetBytes("b2PoI959Z00AcgyDmBU7K8lxI1LWIDV6")); 
-                    SigningCredentials signingCredentials =new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
+                    SymmetricSecurityKey symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("b2PoI959Z00AcgyDmBU7K8lxI1LWIDV6"));
+                    SigningCredentials signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
 
                     var jwtToken = new JwtSecurityToken(
 
                     claims: claims,
 
-                    expires: DateTime.Now.AddMinutes(30), 
+                    expires: DateTime.Now.AddMinutes(30),
                     signingCredentials: signingCredentials
                     );
 
@@ -91,9 +135,21 @@ namespace WebApplication2.Controllers
 
                     return Ok(new { token });
                 }
+                else
+                {
+                    if (result.IsLockedOut)
+                    {
+                        return BadRequest(new { message = "your account is locked, please try again later." });
 
+                    }
+                    if (result.IsNotAllowed) {
 
-            }
+                        return BadRequest(new { message = " email not confirmed, please confirm your email before logging." });
+                    }
+                }
+                }
+
+            
 
             return BadRequest(new { message = "invaild email or password" });
 

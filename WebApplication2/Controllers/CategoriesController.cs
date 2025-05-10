@@ -14,15 +14,16 @@ namespace WebApplication2.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(Roles =$"{StaticData.SuperAdmin}")]
-    public class CategoriesController (ICategoryService categoryService): ControllerBase
+    public class CategoriesController (IOrderService categoryService): ControllerBase
     {
-     private readonly  ICategoryService categoryService = categoryService;
+     private readonly  IOrderService categoryService = categoryService;
 
        
 
 
 
         [HttpGet("")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAllAsync()
         {
             var categories = await categoryService.GetAsync();

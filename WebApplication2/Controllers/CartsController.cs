@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using WebApplication2.DTO.Response;
 using WebApplication2.Models;
 using WebApplication2.Services;
 
@@ -25,19 +28,37 @@ namespace WebApplication2.Controllers
         }
         [HttpPost("{productId}")]
 
-        public async Task<IActionResult> AddToCart([FromRoute]int productId,[FromQuery]int count)
+        public async Task<IActionResult> AddToCart([FromRoute]int productId,CancellationToken cancellationToken)
         {
-            var appUser = userManager.GetUserId(User);
-            var cart = new Cart()
-            {
-                ProductId = productId,
-                Count = count,
-                ApplicationUserId = appUser
+            var appUser = User.FindFirst(ClaimTypes.NameIdentifier).Value;
 
-            };
-            await cartService.AddAsync(cart);
-            return Ok(cart);
+            var result = await cartService.AddToCart(appUser, productId, cancellationToken);
+            return Ok();
         }
+
+
+
+
+        [HttpGet("")]
+
+    
+
+public async Task<IActionResult> GetUserCartAsync()
+
+        {
+
+            var appUser = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+
+            var cartItems = await cartService.GetUserCartAsync(appUser);
+
+            var cartResponse = cartItems.Select(e => e.Product).Adapt<IEnumerable<CartResponse>>();
+
+            var totalPrice = cartItems.Sum(e => e.Product.price * e.Count);
+
+            return Ok(new { cartResponse, totalPrice });
+
+        }
+
 
 
     }

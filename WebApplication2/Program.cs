@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using Stripe;
 using System.Text;
 using WebApplication2.Data;
 using WebApplication2.Models;
@@ -55,9 +56,14 @@ namespace WebApplication2
             options.UseSqlServer(builder.Configuration.GetConnectionString("defaultConnection")));
 
             builder.Services.AddScoped<ICategoryService, CategoryService>();
-
             builder.Services.AddScoped <ICartService, CartService>();
             builder.Services.AddScoped < IUserService, UserService>();
+            builder.Services.AddScoped<IOrderService, OrderService>();
+            builder.Services.AddScoped<IPasswordRestCodeService, PasswordRestCodeService>();
+
+
+            builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
+            StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 
             builder.Services.AddIdentity <ApplicationUsr, IdentityRole>(options =>
             {

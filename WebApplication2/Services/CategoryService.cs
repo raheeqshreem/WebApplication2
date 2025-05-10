@@ -6,7 +6,7 @@ using WebApplication2.Services.IServices;
 
 namespace WebApplication2.Services
 {
-    public class CategoryService : Service<Category>,ICategoryService
+    public class CategoryService : Service<Category>, ICategoryService
     {
 
 

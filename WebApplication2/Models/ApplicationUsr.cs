@@ -40,5 +40,6 @@ namespace WebApplication2.Models
         public DateTime BirthOfDate { get; set; }
 
 
+
     }  
 }

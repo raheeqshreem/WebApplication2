@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.DataProtection.Internal;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,11 @@ namespace WebApplication2.Data
         public DbSet<Brand> Brands { get; set; }
 
         public DbSet<Cart> Carts {get; set; }
+
+        public DbSet<Order> Orders{ get; set; }
+
+        public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<ResetPasswordRequest> ResetPasswordRequest { get; set; }
 
 
         // public IActionResult get()
